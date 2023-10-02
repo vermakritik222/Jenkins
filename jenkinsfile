@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+   
+    environment{
+        SCANNER_HOME= tool 'sonar-scanner'
+    }
+    parameters {
+        string(name: "Branch_Name", defaultValue: 'master', description: 'A name of the Git branch that contain the jenkinfile code')
+        string(name: "Image_Name", defaultValue: 'manage_contact_app', description: 'A name of the image that you want to build')
+        string(name: "Image_Tag", defaultValue: 'latest', description: 'Image tag')
+        booleanParam(name: "PushImage", defaultValue: false)
+    }
+    stages {
+        stage('git-checkout') {
+            steps {
+                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/vermaKritik/to-do-app.git'
+            }
+        }
+        
+        // stage('Sonar Analysis') {
+        //     steps {
+        //          sh ''' ${SCANNER_HOME}/bin/sonar-scanner -Dsonar.host.url=https://9000-booxerr-cicd-769ixx4i418.ws-us105.gitpod.io/ -Dsonar.login=squ_ed9ab48ff0df34414818cb02e0ed4be89ca10597 -Dsonar.projectName=to-do-app \
+        //           -Dsonar.sources=. \
+        //           -Dsonar.projectKey=to-do-app '''
+              
+        //     }
+        // }
+      
+           
+        // stage('OWASP Dependency Check') {
+        //     steps {
+        //       dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'DP'
+        //             dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+        //     }
+        // }
+        
+        stage('Check Docker Version') {
+            steps {
+                sh 'docker --version'
+            }
+        }
+        
+        stage('Docker Build') {
+            steps {
+                script {
+                    echo "Bulding docker images"
+                    def buildArgs = """\
+                            -f Dockerfile \
+                            ."""
+                    docker.build("${params.Image_Name}:${params.Image_Tag}",buildArgs)
+                }
+            }
+        }
+    }
+}
